@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model announcement_comments {
+  id                          String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  announcement_id             String                  @db.Uuid
+  user_id                     String                  @db.Uuid
+  parent_comment_id           String?                 @db.Uuid
+  comment_text                String
+  is_edited                   Boolean?                @default(false)
+  created_at                  DateTime?               @default(now()) @db.Timestamptz(6)
+  updated_at                  DateTime?               @default(now()) @db.Timestamptz(6)
+  announcements               announcements           @relation(fields: [announcement_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  announcement_comments       announcement_comments?  @relation("announcement_commentsToannouncement_comments", fields: [parent_comment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  other_announcement_comments announcement_comments[] @relation("announcement_commentsToannouncement_comments")
+  employees                   employees               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([parent_comment_id], map: "idx_comments_parent")
+}
+
+model announcement_likes {
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  announcement_id String        @db.Uuid
+  user_id         String        @db.Uuid
+  created_at      DateTime?     @default(now()) @db.Timestamptz(6)
+  announcements   announcements @relation(fields: [announcement_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  employees       employees     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([announcement_id], map: "idx_likes_announcement")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model announcement_recipients {
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  announcement_id String        @db.Uuid
+  recipient_type  String        @db.VarChar(20)
+  recipient_id    String        @db.Uuid
+  created_at      DateTime?     @default(now()) @db.Timestamptz(6)
+  announcements   announcements @relation(fields: [announcement_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([announcement_id, recipient_type, recipient_id], map: "idx_unique_recipient")
+}
+
+model announcement_shares {
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  announcement_id String        @db.Uuid
+  shared_by       String        @db.Uuid
+  share_type      String?       @db.VarChar(50)
+  shared_at       DateTime?     @default(now()) @db.Timestamptz(6)
+  announcements   announcements @relation(fields: [announcement_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  employees       employees     @relation(fields: [shared_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([shared_by], map: "idx_shares_user")
+}
+
+model announcement_tags {
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  announcement_id String        @db.Uuid
+  tag_name        String        @db.VarChar(100)
+  created_at      DateTime?     @default(now()) @db.Timestamptz(6)
+  announcements   announcements @relation(fields: [announcement_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([announcement_id, tag_name], map: "idx_unique_announcement_tag")
+}
+
+model announcement_views {
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  announcement_id String        @db.Uuid
+  user_id         String?       @db.Uuid
+  ip_address      String?       @db.Inet
+  user_agent      String?
+  viewed_at       DateTime?     @default(now()) @db.Timestamptz(6)
+  announcements   announcements @relation(fields: [announcement_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  employees       employees?    @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([viewed_at], map: "idx_views_date")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model announcements {
+  id                      String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  title                   String                    @db.VarChar(255)
+  description             String?
+  announcement_cover_url  String?                   @db.VarChar(500)
+  page_cover_url          String?                   @db.VarChar(500)
+  content                 String?
+  status                  String?                   @default("draft") @db.VarChar(20)
+  enable_comments         Boolean?                  @default(false)
+  publish_date            DateTime?                 @db.Timestamptz(6)
+  created_by              String                    @db.Uuid
+  views_count             Int?                      @default(0)
+  likes_count             Int?                      @default(0)
+  comments_count          Int?                      @default(0)
+  shares_count            Int?                      @default(0)
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  announcement_comments   announcement_comments[]
+  announcement_likes      announcement_likes[]
+  announcement_recipients announcement_recipients[]
+  announcement_shares     announcement_shares[]
+  announcement_tags       announcement_tags[]
+  announcement_views      announcement_views[]
+  employees               employees                 @relation(fields: [created_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([publish_date], map: "idx_announcements_publish_date")
+}
+
+model departments {
+  id         String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name       String      @unique @db.VarChar(100)
+  created_at DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at DateTime?   @default(now()) @db.Timestamptz(6)
+  employees  employees[]
+}
+
+model employees {
+  id                    String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  employee_number       String                  @unique @db.VarChar(50)
+  full_name             String                  @db.VarChar(200)
+  department_id         String?                 @db.Uuid
+  password              String?                 @db.VarChar(255)
+  email                 String?                 @unique @db.VarChar(255)
+  position              String?                 @db.VarChar(100)
+  avatar_url            String?                 @db.VarChar(500)
+  is_active             Boolean?                @default(true)
+  created_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  announcement_comments announcement_comments[]
+  announcement_likes    announcement_likes[]
+  announcement_shares   announcement_shares[]
+  announcement_views    announcement_views[]
+  announcements         announcements[]
+  departments           departments?            @relation(fields: [department_id], references: [id], onUpdate: NoAction)
+
+  @@index([email], map: "idx_employees_email")
+}
