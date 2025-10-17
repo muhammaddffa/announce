@@ -6,10 +6,8 @@ import { uploadSingle, uploadMultiple, handleMulterError } from '../../middlewar
 const router = Router();
 const controller = new UploadController();
 
-// Apply auth middleware
 router.use(authMiddleware);
 
-// Upload single image
 router.post(
   '/image',
   uploadSingle,
@@ -17,7 +15,6 @@ router.post(
   controller.uploadImage
 );
 
-// Upload multiple images
 router.post(
   '/images',
   uploadMultiple,
@@ -25,7 +22,6 @@ router.post(
   controller.uploadMultipleImages
 );
 
-// Delete image
 router.delete('/:publicId', controller.deleteImage);
 
 export default router;
