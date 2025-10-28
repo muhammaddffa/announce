@@ -111,6 +111,7 @@ export class AnnouncementService {
         employees: {
           select: {
             id: true,
+            nik: true,
             full_name: true,
             avatar_url: true,
             position: true
@@ -153,7 +154,23 @@ export class AnnouncementService {
           }
         },
         announcement_tags: true,
-        announcement_recipients: true
+        announcement_recipients: {
+          include: {
+            employee: {
+              select: {
+                id: true,
+                full_name: true,
+                nik: true,
+              }
+            },
+            department: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -173,7 +190,23 @@ export class AnnouncementService {
           }
         },
         announcement_tags: true,
-        announcement_recipients: true
+        announcement_recipients: {
+          include: {
+            employee: {
+              select: {
+                id: true,
+                full_name: true,
+                nik: true,
+              }
+            },
+            department: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -250,13 +283,30 @@ export class AnnouncementService {
         employees: {
           select: {
             id: true,
+            nik: true,
             full_name: true,
             avatar_url: true,
             position: true
           }
         },
         announcement_tags: true,
-        announcement_recipients: true
+        announcement_recipients: {
+          include: {
+            employee: {
+              select: {
+                id: true,
+                full_name: true,
+                nik: true,
+              }
+            },
+            department: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        }
       }
     });
 

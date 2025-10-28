@@ -10,7 +10,7 @@ interface LoginDto {
 }
 
 interface RegisterDto {
-  employee_number: string;
+  nik: string;
   full_name: string;
   email: string;
   password: string;
@@ -41,7 +41,7 @@ export class AuthService {
     }
 
     const existingEmployeeNumber = await prisma.employees.findUnique({
-      where: { employee_number: data.employee_number }
+      where: { nik: data.nik }
     });
 
     if (existingEmployeeNumber) {
@@ -53,7 +53,7 @@ export class AuthService {
     // Create employee
     const employee = await prisma.employees.create({
       data: {
-        employee_number: data.employee_number,
+        nik: data.nik,
         full_name: data.full_name,
         email: data.email,
         password: hashedPassword,
@@ -63,7 +63,7 @@ export class AuthService {
       },
       select: {
         id: true,
-        employee_number: true,
+        nik: true,
         full_name: true,
         email: true,
         position: true,
@@ -81,7 +81,7 @@ export class AuthService {
     const token = this.generateToken({
       id: employee.id,
       email: employee.email,
-      employeeNumber: employee.employee_number
+      nik: employee.nik
     });
 
     return {
@@ -129,7 +129,7 @@ export class AuthService {
     const token = this.generateToken({
       id: employee.id,
       email: employee.email,
-      employeeNumber: employee.employee_number
+      nik: employee.nik
     });
 
     // Remove password from response
@@ -146,7 +146,7 @@ export class AuthService {
       where: { id: userId },
       select: {
         id: true,
-        employee_number: true,
+        nik: true,
         full_name: true,
         email: true,
         position: true,

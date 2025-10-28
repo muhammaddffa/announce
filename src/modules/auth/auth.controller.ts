@@ -11,22 +11,6 @@ export class AuthController {
   constructor() {
     this.service = new AuthService();
   }
-  
-  // register = async (req: Request, res: Response, next: NextFunction) => {
-  //   try {
-  //     const data = req.body;
-  //     const result = await this.service.register(data);
-
-  //     res.status(HTTP_STATUS.CREATED).json({
-  //       code: HTTP_STATUS.CREATED,
-  //       message: 'Registration successful',
-  //       data: result
-  //     }
-  //     );
-  //   } catch (error) {
-  //     next(error);
-  //   }
-  // };
 
   login = async (req: Request, res: Response, next: NextFunction) => {
     try {

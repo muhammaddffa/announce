@@ -21,6 +21,7 @@ export interface AnnouncementRecipient {
     employee?: {
         id: string
         fullName: string
+        nik: string
         employeeNumber: string
     };
 }

@@ -33,17 +33,16 @@ async function main() {
 
   console.log('✅ Departments created');
 
-  // Hash password
   const defaultPassword = await bcrypt.hash('password123', 10);
 
-  // Create employees
   const john = await prisma.employees.upsert({
     where: { email: 'john.doe@company.com' },
     update: {},
     create: {
-      employee_number: 'EMP001',
+      nik: '123234',
       full_name: 'John Doe',
       email: 'john.doe@company.com',
+      avatar_url: "https://res.cloudinary.com/dbbzu2sxo/image/upload/v1760687013/announce/kirito_tgbzka.jpg",
       password: defaultPassword,
       position: 'UI UX Super Admin',
       department_id: uiuxDept.id,
@@ -55,9 +54,10 @@ async function main() {
     where: { email: 'jane.smith@company.com' },
     update: {},
     create: {
-      employee_number: 'EMP002',
+      nik: '234454',
       full_name: 'Jane Smith',
       email: 'jane.smith@company.com',
+      avatar_url: 'https://res.cloudinary.com/dbbzu2sxo/image/upload/v1760687013/announce/kirito_tgbzka.jpg',
       password: defaultPassword,
       position: 'Senior Software Engineer',
       department_id: engineeringDept.id,
@@ -69,9 +69,10 @@ async function main() {
     where: { email: 'mike.johnson@company.com' },
     update: {},
     create: {
-      employee_number: 'EMP003',
+      nik: '45656767',
       full_name: 'Mike Johnson',
       email: 'mike.johnson@company.com',
+      avatar_url: 'https://res.cloudinary.com/dbbzu2sxo/image/upload/v1760687013/announce/kirito_tgbzka.jpg',
       password: defaultPassword,
       position: 'HR Manager',
       department_id: hrDept.id,

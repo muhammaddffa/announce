@@ -5,7 +5,7 @@ export interface DepartmentWithEmployees {
   updated_at: Date | null;
   employees: Array<{
     id: string;
-    employee_number: string;
+    nik: string;
     full_name: string;
     email: string | null;
     position: string | null;

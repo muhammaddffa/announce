@@ -25,4 +25,9 @@ app.use('/api/upload', uploadRoutes);
 app.use(errorHandler);
 
 
+app.get("/", (req, res) => {
+  res.status(200).json({ message: "Awesome it works 🐻" });
+});
+
+
 export default app;

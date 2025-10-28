@@ -30,7 +30,7 @@ export class EmployeeService {
       where.OR = [
         { full_name: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
-        { employee_number: { contains: search, mode: 'insensitive' } }
+        { nik: { contains: search, mode: 'insensitive' } }
       ];
     }
 
@@ -43,7 +43,7 @@ export class EmployeeService {
       orderBy: { full_name: 'asc' },
       select: {
         id: true,
-        employee_number: true,
+        nik: true,
         full_name: true,
         email: true,
         position: true,
@@ -71,7 +71,7 @@ export class EmployeeService {
       where: { id },
       select: {
         id: true,
-        employee_number: true,
+        nik: true,
         full_name: true,
         email: true,
         position: true,
@@ -103,7 +103,7 @@ export class EmployeeService {
       orderBy: { full_name: 'asc' },
       select: {
         id: true,
-        employee_number: true,
+        nik: true,
         full_name: true,
         email: true,
         position: true,
@@ -124,7 +124,7 @@ export class EmployeeService {
   async create(data: CreateEmployeeDto): Promise<EmployeeWithDepartment> {
     // Check if employee_number already exists
     const existing = await prisma.employees.findUnique({
-      where: { employee_number: data.employee_number }
+      where: { nik: data.nik }
     });
 
     if (existing) {
@@ -150,7 +150,7 @@ export class EmployeeService {
 
     const employee = await prisma.employees.create({
       data: {
-        employee_number: data.employee_number,
+        nik: data.nik,
         full_name: data.full_name,
         department_id: data.department_id,
         email: data.email,
@@ -161,7 +161,7 @@ export class EmployeeService {
       },
       select: {
         id: true,
-        employee_number: true,
+        nik: true,
         full_name: true,
         email: true,
         position: true,
@@ -191,9 +191,9 @@ export class EmployeeService {
     }
 
     // Check if employee_number already exists (if updating)
-    if (data.employee_number && data.employee_number !== existing.employee_number) {
+    if (data.nik && data.nik !== existing.nik) {
       const existingNumber = await prisma.employees.findUnique({
-        where: { employee_number: data.employee_number }
+        where: { nik: data.nik }
       });
 
       if (existingNumber) {
@@ -218,7 +218,7 @@ export class EmployeeService {
     }
 
     const updateData: any = {
-      employee_number: data.employee_number,
+      nik: data.nik,
       full_name: data.full_name,
       department_id: data.department_id,
       email: data.email,
@@ -236,7 +236,7 @@ export class EmployeeService {
       data: updateData,
       select: {
         id: true,
-        employee_number: true,
+        nik: true,
         full_name: true,
         email: true,
         position: true,

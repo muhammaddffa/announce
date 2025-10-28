@@ -20,7 +20,6 @@ const storage = multer.diskStorage({
 
 // File filter
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  // Allowed extensions
   const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
   const ext = path.extname(file.originalname).toLowerCase();
 
@@ -31,23 +30,19 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
   }
 };
 
-// Create multer upload instance
 export const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max file size
-    files: 5 // Max 5 files at once
+    fileSize: 5 * 1024 * 1024, 
+    files: 5
   }
 });
 
-// Middleware for single file upload
 export const uploadSingle = upload.single('image');
 
-// Middleware for multiple files upload
 export const uploadMultiple = upload.array('images', 5);
 
-// Error handling middleware for multer
 export const handleMulterError = (err: any, req: Request, res: any, next: any) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {

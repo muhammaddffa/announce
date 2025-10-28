@@ -11,7 +11,6 @@ export class UploadController {
     this.service = new UploadService();
   }
 
-  // Upload single image
   uploadImage = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.file) {
@@ -33,7 +32,6 @@ export class UploadController {
     }
   };
 
-  // Upload multiple images
   uploadMultipleImages = async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
@@ -55,7 +53,6 @@ export class UploadController {
     }
   };
 
-  // Delete image
   deleteImage = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { publicId } = req.params;

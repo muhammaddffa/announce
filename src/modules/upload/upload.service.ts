@@ -13,12 +13,10 @@ interface UploadResult {
 }
 
 export class UploadService {
-  // Upload single image to Cloudinary
   async uploadImage(file: Express.Multer.File, folder: string = 'announce'): Promise<UploadResult> {
     try {
       this.validateImage(file);
 
-      // Upload to Cloudinary
       const result = await cloudinary.uploader.upload(file.path, {
         folder: folder,
         resource_type: 'image',
@@ -29,7 +27,6 @@ export class UploadService {
         ]
       });
 
-      // Delete temp file
       this.deleteLocalFile(file.path);
 
       return {
@@ -41,7 +38,6 @@ export class UploadService {
         size: result.bytes
       };
     } catch (error: any) {
-      // Delete temp file if upload failed
       this.deleteLocalFile(file.path);
       
       throw new AppError(
@@ -51,7 +47,6 @@ export class UploadService {
     }
   }
 
-  // Validate image
   private validateImage(file: Express.Multer.File): void {
     // Check if file exists
     if (!file) {
@@ -75,7 +70,6 @@ export class UploadService {
     }
   }
 
-  // Delete local temporary file
   private deleteLocalFile(filePath: string): void {
     try {
       if (fs.existsSync(filePath)) {
@@ -86,7 +80,6 @@ export class UploadService {
     }
   }
 
-  // Delete image from Cloudinary
   async deleteImage(publicId: string): Promise<void> {
     try {
       await cloudinary.uploader.destroy(publicId);
@@ -98,7 +91,6 @@ export class UploadService {
     }
   }
 
-  // Upload multiple images
   async uploadMultipleImages(files: Express.Multer.File[], folder: string = 'announcements'): Promise<UploadResult[]> {
     const uploadPromises = files.map(file => this.uploadImage(file, folder));
     return Promise.all(uploadPromises);

@@ -1,5 +1,5 @@
 export interface CreateEmployeeDto {
-  employee_number: string;
+  nik: string;
   full_name: string;
   department_id?: string;
   email?: string;
@@ -10,7 +10,7 @@ export interface CreateEmployeeDto {
 }
 
 export interface UpdateEmployeeDto {
-  employee_number?: string;
+  nik?: string;
   full_name?: string;
   department_id?: string;
   email?: string;
@@ -22,7 +22,7 @@ export interface UpdateEmployeeDto {
 
 export interface EmployeeResponseDto {
   id: string;
-  employee_number: string;
+  nik: string;
   full_name: string;
   email: string | null;
   position: string | null;

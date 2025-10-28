@@ -30,7 +30,7 @@ export class DepartmentService {
         employees: {
           select: {
             id: true,
-            employee_number: true,
+            nik: true,
             full_name: true,
             email: true,
             position: true,

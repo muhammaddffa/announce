@@ -4,7 +4,7 @@ export interface LoginDto {
 }
 
 export interface RegisterDto {
-  employee_number: string;
+  nik: string;
   full_name: string;
   email: string;
   password: string;
@@ -15,7 +15,7 @@ export interface RegisterDto {
 export interface AuthResponse {
   user: {
     id: string;
-    employee_number: string;
+    nik: string;
     full_name: string;
     email: string;
     position: string | null;

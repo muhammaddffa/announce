@@ -6,13 +6,15 @@ export interface CreateAnnouncementDto {
   page_cover_url?: string;
   status?: string;
   enable_comments?: boolean;
-  publish_date?: Date | null;
-  tags?: string[];
-  recipients?: Array<{
-    type: 'department' | 'employee';
-    id: string;
-  }>;
+  publish_date?: Date;
   created_by: string;
+  tags?: string[];
+  recipients?: RecipientDto[];
+}
+
+export interface RecipientDto {
+  type: 'employee' | 'department';
+  id: string;
 }
 
 export interface UpdateAnnouncementDto {
