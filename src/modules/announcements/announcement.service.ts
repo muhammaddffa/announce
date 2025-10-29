@@ -3,8 +3,10 @@ import { AppError } from '../../utils/errorHandler';
 import { HTTP_STATUS } from '../../shared/constants/statusCodes';
 import { getPaginationParams, getPaginationMeta } from '../../utils/pagination';
 import { 
+  CreateCommentDto,
   GetAllAnnouncementsParams, 
   PaginationParams,
+  UpdateCommentDto,
 } from './announcement.types';
 import { CreateAnnouncementDto, UpdateAnnouncementDto } from './announcement.dto';
 
@@ -368,5 +370,208 @@ export class AnnouncementService {
       where: { id },
       data: { status: 'unpublished' }
     });
+  }
+
+  /**
+   * Comment Methods
+   */
+  async addComment(announcementId: string, userId: string, data: CreateCommentDto) {
+    // Check if announcement exists
+    const announcement = await prisma.announcements.findUnique({
+      where: { id: announcementId }
+    });
+
+    if (!announcement) {
+      throw new AppError('Announcement not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    // Check if comments are enabled
+    if (!announcement.enable_comments) {
+      throw new AppError('Comments are disabled for this announcement', HTTP_STATUS.FORBIDDEN);
+    }
+
+    // Create comment
+    const comment = await prisma.announcement_comments.create({
+      data: {
+        announcement_id: announcementId,
+        user_id: userId,  
+        comment_text: data.comment_text,
+        parent_comment_id: data.parent_comment_id || null
+      },
+      include: {
+        employees: {
+          select: {
+            id: true,
+            nik: true,
+            full_name: true,
+            avatar_url: true,
+            position: true
+          }
+        }
+      }
+    });
+
+    // Increment comments count
+    await prisma.announcements.update({
+      where: { id: announcementId },
+      data: { comments_count: { increment: 1 } }
+    });
+
+    return comment;
+  }
+
+  async getComments(announcementId: string, params: PaginationParams) {
+  const { skip, take } = getPaginationParams(params.page, params.limit);
+
+  const announcement = await prisma.announcements.findUnique({
+    where: { id: announcementId }
+  });
+
+  if (!announcement) {
+    throw new AppError('Announcement not found', HTTP_STATUS.NOT_FOUND);
+  }
+
+  const where = { 
+    announcement_id: announcementId,
+    parent_comment_id: null
+  };
+
+  const total = await prisma.announcement_comments.count({ where });
+
+  const comments = await prisma.announcement_comments.findMany({
+    where,
+    skip,
+    take,
+    orderBy: { created_at: 'desc' },
+    include: {
+      employees: {
+        select: {
+          id: true,
+          nik: true,
+          full_name: true,
+          avatar_url: true,
+          position: true
+        }
+      },
+      other_announcement_comments: {
+        take: 1,
+        orderBy: { created_at: 'asc' },
+        include: {
+          employees: {
+            select: {
+              id: true,
+              nik: true,
+              full_name: true,
+              avatar_url: true,
+              position: true
+            }
+          }
+        }
+      },
+      _count: {
+        select: {
+          other_announcement_comments: true
+        }
+      }
+    }
+  });
+
+  return {
+    data: comments,
+    meta: getPaginationMeta(params.page, params.limit, total)
+  };
+}
+
+  async updateComment(commentId: string, userId: string, data: UpdateCommentDto) {
+    const existing = await prisma.announcement_comments.findUnique({
+      where: { id: commentId }
+    });
+
+    if (!existing) {
+      throw new AppError('Comment not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    if (existing.user_id !== userId) { 
+      throw new AppError('Unauthorized to update this comment', HTTP_STATUS.FORBIDDEN);
+    }
+
+    return prisma.announcement_comments.update({
+      where: { id: commentId },
+      data: { 
+        comment_text: data.comment_text, 
+        is_edited: true,
+        updated_at: new Date()
+      },
+      include: {
+        employees: {
+          select: {
+            id: true,
+            nik: true,
+            full_name: true,
+            avatar_url: true,
+            position: true
+          }
+        }
+      }
+    });
+  }
+
+  async deleteComment(commentId: string, userId: string) {
+    const existing = await prisma.announcement_comments.findUnique({
+      where: { id: commentId },
+      include: {
+        other_announcement_comments: true
+      }
+    });
+
+    if (!existing) {
+      throw new AppError('Comment not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    if (existing.user_id !== userId) {
+      throw new AppError('Unauthorized to delete this comment', HTTP_STATUS.FORBIDDEN);
+    }
+
+    // Hitung total comments to delete (parent + all nested replies)
+    const totalToDelete = 1 + existing.other_announcement_comments.length;
+
+    // Delete comment (will cascade delete replies due to onDelete: Cascade)
+    await prisma.announcement_comments.delete({ 
+      where: { id: commentId } 
+    });
+
+    // Decrement comments count
+    await prisma.announcements.update({
+      where: { id: existing.announcement_id },
+      data: { comments_count: { decrement: totalToDelete } }
+    });
+  }
+
+  async getReplies(commentId: string) {
+    const comment = await prisma.announcement_comments.findUnique({
+      where: { id: commentId }
+    });
+
+    if (!comment) {
+      throw new AppError('Comment not found', HTTP_STATUS.NOT_FOUND);
+    }
+
+    const replies = await prisma.announcement_comments.findMany({
+      where: { parent_comment_id: commentId },
+      orderBy: { created_at: 'asc' },
+      include: {
+        employees: {
+          select: {
+            id: true,
+            nik: true,
+            full_name: true,
+            avatar_url: true,
+            position: true
+          }
+        }
+      }
+    });
+
+    return replies;
   }
 }

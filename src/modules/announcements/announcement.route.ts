@@ -18,4 +18,10 @@ router.patch('/:id/unpublish', authMiddleware, controller.unpublish);
 router.get('/', controller.getAll);
 router.get('/:id', controller.getById);
 
+router.post('/:id/comments', authMiddleware, controller.addComment);
+router.get('/:id/comments', controller.getComments);
+router.get('/comments/:commentId/replies', controller.getReplies);
+router.put('/comments/:commentId', authMiddleware, controller.updateComment);
+router.delete('/comments/:commentId', authMiddleware, controller.deleteComment);
+
 export default router;

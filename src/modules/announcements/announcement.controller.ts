@@ -212,4 +212,101 @@ export class AnnouncementController {
       next(error);
     }
   };
+
+  /**
+   * Commment CONTOLLERS
+   */
+
+  addComment = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params; // announcement ID
+      const userId = req.user!.id;
+      const data = req.body;
+
+      const comment = await this.service.addComment(id, userId, data);
+
+      res.status(HTTP_STATUS.CREATED).json({
+        code: HTTP_STATUS.CREATED,
+        status: "success",
+        message: 'Comment added successfully',
+        data: comment
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getComments = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { page, limit } = req.query;
+
+      const result = await this.service.getComments(id, {
+        page: Number(page) || 1,
+        limit: Number(limit) || 10
+      });
+
+      res.status(HTTP_STATUS.OK).json({
+        code: HTTP_STATUS.OK,
+        status: "success",
+        message: 'Comments retrieved successfully',
+        data: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateComment = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { commentId } = req.params;
+      const userId = req.user!.id;
+      const data = req.body;
+
+      const comment = await this.service.updateComment(commentId, userId, data);
+
+      res.status(HTTP_STATUS.OK).json({
+        code: HTTP_STATUS.OK,
+        status: "success",
+        message: 'Comment updated successfully',
+        data: comment
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  deleteComment = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { commentId } = req.params;
+      const userId = req.user!.id;
+
+      await this.service.deleteComment(commentId, userId);
+
+      res.status(HTTP_STATUS.OK).json({
+        code: HTTP_STATUS.OK,
+        status: "success",
+        message: 'Comment deleted successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getReplies = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { commentId } = req.params;
+
+      const replies = await this.service.getReplies(commentId);
+
+      res.status(HTTP_STATUS.OK).json({
+        code: HTTP_STATUS.OK,
+        status: "success",
+        message: 'Replies retrieved successfully',
+        data: replies
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
