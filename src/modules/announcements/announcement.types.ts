@@ -97,7 +97,7 @@ export interface CreateAnnouncementDto {
 }
 
 export interface RecipientDto {
-  type: 'employee' | 'department';
+  type: 'Employee' | 'Department';
   id: string;
 }
 

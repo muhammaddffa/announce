@@ -7,10 +7,52 @@ import {
   GetAllAnnouncementsParams, 
   PaginationParams,
   UpdateCommentDto,
+  RecipientDto,
 } from './announcement.types';
 import { CreateAnnouncementDto, UpdateAnnouncementDto } from './announcement.dto';
 
 export class AnnouncementService {
+  private async validateRecipients(recipients: RecipientDto[]) {
+    const errors: string[] = [];
+
+    for (const recipient of recipients) {
+      // Validate type
+      if (!['Employee', 'Department'].includes(recipient.type)) {
+        errors.push(`Invalid recipient type: ${recipient.type}. Must be 'Employee' or 'Department'`);
+        continue;
+      }
+
+      // Validate Employee
+      if (recipient.type === 'Employee') {
+        const employee = await prisma.employees.findUnique({
+          where: { id: recipient.id }
+        });
+
+        if (!employee) {
+          errors.push(`Employee with ID ${recipient.id} not found`);
+        }
+      }
+
+      // Validate Department
+      if (recipient.type === 'Department') {
+        const department = await prisma.departments.findUnique({
+          where: { id: recipient.id }
+        });
+
+        if (!department) {
+          errors.push(`Department with ID ${recipient.id} not found`);
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      throw new AppError(
+        `Invalid recipients: ${errors.join(', ')}`,
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+  }
+
   async getStatistics() {
     const [total, published, draft, unpublished] = await Promise.all([
       prisma.announcements.count(),
@@ -106,6 +148,10 @@ export class AnnouncementService {
   async create(data: CreateAnnouncementDto) {
     const { tags, recipients, ...announcementData } = data;
 
+    if (recipients && recipients.length > 0) {
+      await this.validateRecipients(recipients);
+    }
+
     // Create announcement first
     const announcement = await prisma.announcements.create({
       data: announcementData,
@@ -150,6 +196,7 @@ export class AnnouncementService {
         employees: {
           select: {
             id: true,
+            nik: true,
             full_name: true,
             avatar_url: true,
             position: true
@@ -174,7 +221,7 @@ export class AnnouncementService {
           }
         }
       }
-    });
+    }); 
 
     return completeAnnouncement;
   }
@@ -186,6 +233,7 @@ export class AnnouncementService {
         employees: {
           select: {
             id: true,
+            nik: true,
             full_name: true,
             avatar_url: true,
             position: true
@@ -239,6 +287,10 @@ export class AnnouncementService {
     }
 
     const { tags, recipients, ...announcementData } = data;
+
+    if (recipients && recipients.length > 0) {
+      await this.validateRecipients(recipients);
+    }
 
     // Update announcement
     const announcement = await prisma.announcements.update({
@@ -297,8 +349,8 @@ export class AnnouncementService {
             employee: {
               select: {
                 id: true,
-                full_name: true,
                 nik: true,
+                full_name: true
               }
             },
             department: {
@@ -376,7 +428,6 @@ export class AnnouncementService {
    * Comment Methods
    */
   async addComment(announcementId: string, userId: string, data: CreateCommentDto) {
-    // Check if announcement exists
     const announcement = await prisma.announcements.findUnique({
       where: { id: announcementId }
     });
@@ -385,12 +436,10 @@ export class AnnouncementService {
       throw new AppError('Announcement not found', HTTP_STATUS.NOT_FOUND);
     }
 
-    // Check if comments are enabled
     if (!announcement.enable_comments) {
       throw new AppError('Comments are disabled for this announcement', HTTP_STATUS.FORBIDDEN);
     }
 
-    // Create comment
     const comment = await prisma.announcement_comments.create({
       data: {
         announcement_id: announcementId,
@@ -411,7 +460,6 @@ export class AnnouncementService {
       }
     });
 
-    // Increment comments count
     await prisma.announcements.update({
       where: { id: announcementId },
       data: { comments_count: { increment: 1 } }
@@ -421,66 +469,66 @@ export class AnnouncementService {
   }
 
   async getComments(announcementId: string, params: PaginationParams) {
-  const { skip, take } = getPaginationParams(params.page, params.limit);
+    const { skip, take } = getPaginationParams(params.page, params.limit);
 
-  const announcement = await prisma.announcements.findUnique({
-    where: { id: announcementId }
-  });
+    const announcement = await prisma.announcements.findUnique({
+      where: { id: announcementId }
+    });
 
-  if (!announcement) {
-    throw new AppError('Announcement not found', HTTP_STATUS.NOT_FOUND);
-  }
+    if (!announcement) {
+      throw new AppError('Announcement not found', HTTP_STATUS.NOT_FOUND);
+    }
 
-  const where = { 
-    announcement_id: announcementId,
-    parent_comment_id: null
-  };
+    const where = { 
+      announcement_id: announcementId,
+      parent_comment_id: null
+    };
 
-  const total = await prisma.announcement_comments.count({ where });
+    const total = await prisma.announcement_comments.count({ where });
 
-  const comments = await prisma.announcement_comments.findMany({
-    where,
-    skip,
-    take,
-    orderBy: { created_at: 'desc' },
-    include: {
-      employees: {
-        select: {
-          id: true,
-          nik: true,
-          full_name: true,
-          avatar_url: true,
-          position: true
-        }
-      },
-      other_announcement_comments: {
-        take: 1,
-        orderBy: { created_at: 'asc' },
-        include: {
-          employees: {
-            select: {
-              id: true,
-              nik: true,
-              full_name: true,
-              avatar_url: true,
-              position: true
+    const comments = await prisma.announcement_comments.findMany({
+      where,
+      skip,
+      take,
+      orderBy: { created_at: 'desc' },
+      include: {
+        employees: {
+          select: {
+            id: true,
+            nik: true,
+            full_name: true,
+            avatar_url: true,
+            position: true
+          }
+        },
+        other_announcement_comments: {
+          take: 1,
+          orderBy: { created_at: 'asc' },
+          include: {
+            employees: {
+              select: {
+                id: true,
+                nik: true,
+                full_name: true,
+                avatar_url: true,
+                position: true
+              }
             }
           }
-        }
-      },
-      _count: {
-        select: {
-          other_announcement_comments: true
+        },
+        _count: {
+          select: {
+            other_announcement_comments: true
+          }
         }
       }
-    }
-  });
+    });
 
-  return {
-    data: comments,
-    meta: getPaginationMeta(params.page, params.limit, total)
-  };
-}
+    return {
+      data: comments,
+      meta: getPaginationMeta(params.page, params.limit, total)
+    };
+  }
 
   async updateComment(commentId: string, userId: string, data: UpdateCommentDto) {
     const existing = await prisma.announcement_comments.findUnique({
@@ -532,22 +580,21 @@ export class AnnouncementService {
       throw new AppError('Unauthorized to delete this comment', HTTP_STATUS.FORBIDDEN);
     }
 
-    // Hitung total comments to delete (parent + all nested replies)
     const totalToDelete = 1 + existing.other_announcement_comments.length;
 
-    // Delete comment (will cascade delete replies due to onDelete: Cascade)
     await prisma.announcement_comments.delete({ 
       where: { id: commentId } 
     });
 
-    // Decrement comments count
     await prisma.announcements.update({
       where: { id: existing.announcement_id },
       data: { comments_count: { decrement: totalToDelete } }
     });
   }
 
-  async getReplies(commentId: string) {
+  async getReplies(commentId: string, params: PaginationParams) {
+    const { skip, take } = getPaginationParams(params.page, params.limit);
+
     const comment = await prisma.announcement_comments.findUnique({
       where: { id: commentId }
     });
@@ -556,8 +603,13 @@ export class AnnouncementService {
       throw new AppError('Comment not found', HTTP_STATUS.NOT_FOUND);
     }
 
+    const where = { parent_comment_id: commentId };
+    const total = await prisma.announcement_comments.count({ where });
+
     const replies = await prisma.announcement_comments.findMany({
-      where: { parent_comment_id: commentId },
+      where,
+      skip,
+      take,
       orderBy: { created_at: 'asc' },
       include: {
         employees: {
@@ -572,6 +624,9 @@ export class AnnouncementService {
       }
     });
 
-    return replies;
+    return {
+      data: replies,
+      meta: getPaginationMeta(params.page, params.limit, total)
+    };
   }
 }

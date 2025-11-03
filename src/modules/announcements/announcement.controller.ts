@@ -296,8 +296,12 @@ export class AnnouncementController {
   getReplies = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { commentId } = req.params;
+      const {page, limit} = req.query;
 
-      const replies = await this.service.getReplies(commentId);
+      const replies = await this.service.getReplies(commentId, {
+        page: Number(page) || 1,
+        limit: Number(limit) || 10
+      });
 
       res.status(HTTP_STATUS.OK).json({
         code: HTTP_STATUS.OK,
