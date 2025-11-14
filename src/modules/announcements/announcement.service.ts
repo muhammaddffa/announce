@@ -16,13 +16,11 @@ export class AnnouncementService {
     const errors: string[] = [];
 
     for (const recipient of recipients) {
-      // Validate type
       if (!['Employee', 'Department'].includes(recipient.type)) {
         errors.push(`Invalid recipient type: ${recipient.type}. Must be 'Employee' or 'Department'`);
         continue;
       }
 
-      // Validate Employee
       if (recipient.type === 'Employee') {
         const employee = await prisma.employees.findUnique({
           where: { id: recipient.id }
@@ -33,7 +31,6 @@ export class AnnouncementService {
         }
       }
 
-      // Validate Department
       if (recipient.type === 'Department') {
         const department = await prisma.departments.findUnique({
           where: { id: recipient.id }
@@ -144,7 +141,6 @@ export class AnnouncementService {
     };
   }
 
-  // create method
   async create(data: CreateAnnouncementDto) {
     const { tags, recipients, ...announcementData } = data;
 
@@ -152,7 +148,6 @@ export class AnnouncementService {
       await this.validateRecipients(recipients);
     }
 
-    // Create announcement first
     const announcement = await prisma.announcements.create({
       data: announcementData,
       include: {
@@ -168,7 +163,6 @@ export class AnnouncementService {
       }
     });
 
-    // Create tags if exists
     if (tags && tags.length > 0) {
       await prisma.announcement_tags.createMany({
         data: tags.map((tag) => ({
@@ -178,7 +172,6 @@ export class AnnouncementService {
       });
     }
 
-    // Create recipients if exists
     if (recipients && recipients.length > 0) {
       await prisma.announcement_recipients.createMany({
         data: recipients.map((r) => ({
@@ -189,7 +182,6 @@ export class AnnouncementService {
       });
     }
 
-    // Fetch complete announcement with relations
     const completeAnnouncement = await prisma.announcements.findUnique({
       where: { id: announcement.id },
       include: {
@@ -264,7 +256,6 @@ export class AnnouncementService {
       throw new AppError('Announcement not found', HTTP_STATUS.NOT_FOUND);
     }
 
-    // Increment view count (fire and forget)
     prisma.announcements.update({
       where: { id },
       data: { views_count: { increment: 1 } }
@@ -292,13 +283,11 @@ export class AnnouncementService {
       await this.validateRecipients(recipients);
     }
 
-    // Update announcement
     const announcement = await prisma.announcements.update({
       where: { id },
       data: announcementData
     });
 
-    // Update tags if provided
     if (tags !== undefined) {
       await prisma.announcement_tags.deleteMany({ 
         where: { announcement_id: id } 
@@ -314,7 +303,6 @@ export class AnnouncementService {
       }
     }
 
-    // Update recipients if provided
     if (recipients !== undefined) {
       await prisma.announcement_recipients.deleteMany({ 
         where: { announcement_id: id } 
@@ -502,7 +490,7 @@ export class AnnouncementService {
           }
         },
         other_announcement_comments: {
-          take: 1,
+          take: 3,
           orderBy: { created_at: 'asc' },
           include: {
             employees: {
@@ -628,5 +616,71 @@ export class AnnouncementService {
       data: replies,
       meta: getPaginationMeta(params.page, params.limit, total)
     };
+  }
+
+  /**
+   * Tag Methods
+   */
+  async searchTags(query: string, limit: number = 10) {
+    const tags = await prisma.announcement_tags.groupBy({
+      by: ['tag_name'],
+      where: {
+        tag_name: {
+          contains: query,
+          mode: 'insensitive'
+        }
+      },
+      _count: {
+        tag_name: true
+      },
+      orderBy: {
+        _count: {
+          tag_name: 'desc'
+        }
+      },
+      take: limit
+    });
+
+    return tags.map(tag => ({
+      name: tag.tag_name,
+      count: tag._count.tag_name
+    }));
+  }
+
+  async getPopularTags(limit: number = 20) {
+    const tags = await prisma.announcement_tags.groupBy({
+      by: ['tag_name'],
+      _count: {
+        tag_name: true
+      },
+      orderBy: {
+        _count: {
+          tag_name: 'desc'
+        }
+      },
+      take: limit
+    });
+
+    return tags.map(tag => ({
+      name: tag.tag_name,
+      count: tag._count.tag_name
+    }));
+  }
+
+  async getAllTags() {
+    const tags = await prisma.announcement_tags.groupBy({
+      by: ['tag_name'],
+      _count: {
+        tag_name: true
+      },
+      orderBy: {
+        tag_name: 'asc'
+      }
+    });
+
+    return tags.map(tag => ({
+      name: tag.tag_name,
+      count: tag._count.tag_name
+    }));
   }
 }

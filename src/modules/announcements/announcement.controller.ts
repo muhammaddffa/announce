@@ -313,4 +313,57 @@ export class AnnouncementController {
       next(error);
     }
   };
+  searchTags = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { q, limit } = req.query;
+      
+      const tags = await this.service.searchTags(
+        q as string || '',
+        Number(limit) || 10
+      );
+
+      res.status(HTTP_STATUS.OK).json({
+        code: HTTP_STATUS.OK,
+        status: "success",
+        message: 'Tags retrieved successfully',
+        data: tags
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getPopularTags = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { limit } = req.query;
+      
+      const tags = await this.service.getPopularTags(
+        Number(limit) || 20
+      );
+
+      res.status(HTTP_STATUS.OK).json({
+        code: HTTP_STATUS.OK,
+        status: "success",
+        message: 'Popular tags retrieved successfully',
+        data: tags
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getAllTags = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tags = await this.service.getAllTags();
+
+      res.status(HTTP_STATUS.OK).json({
+        code: HTTP_STATUS.OK,
+        status: "success",
+        message: 'All tags retrieved successfully',
+        data: tags
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
